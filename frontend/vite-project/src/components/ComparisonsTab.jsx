@@ -25,7 +25,7 @@ export default function ComparisonsTab({ currentResult, showToast }) {
 
   useEffect(() => {
     api.getResults().then(setPastRuns).catch(() => showToast('Failed to load results', 'error'))
-  }, [])
+  }, [showToast])
 
   const addResult = async (id) => {
     if (selectedIds.includes(id)) return

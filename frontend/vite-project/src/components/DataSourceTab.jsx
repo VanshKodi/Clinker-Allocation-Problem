@@ -1,25 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '../api'
 import NetworkGraph from './NetworkGraph'
 
 function EditableCell({ value, onSave, type }) {
   const [editing, setEditing] = useState(false)
-  const [val, setVal] = useState(value ?? '')
+  const val = editing ? undefined : value
 
-  useEffect(() => { setVal(value ?? '') }, [value])
+  const [editVal, setEditVal] = useState(value ?? '')
 
   if (!editing) {
-    return <span onClick={() => setEditing(true)} style={{ cursor: 'pointer', minWidth: 40, display: 'inline-block' }}>{value ?? '—'}</span>
+    return <span onClick={() => { setEditVal(value ?? ''); setEditing(true) }} style={{ cursor: 'pointer', minWidth: 40, display: 'inline-block' }}>{val ?? '—'}</span>
   }
   return (
     <input
       className="inline-input"
       type={type === 'number' ? 'number' : 'text'}
-      value={val}
+      value={editVal}
       autoFocus
-      onChange={e => setVal(e.target.value)}
-      onBlur={() => { setEditing(false); onSave(type === 'number' ? parseFloat(val) || 0 : val) }}
-      onKeyDown={e => { if (e.key === 'Enter') { setEditing(false); onSave(type === 'number' ? parseFloat(val) || 0 : val) } }}
+      onChange={e => setEditVal(e.target.value)}
+      onBlur={() => { setEditing(false); onSave(type === 'number' ? parseFloat(editVal) || 0 : editVal) }}
+      onKeyDown={e => { if (e.key === 'Enter') { setEditing(false); onSave(type === 'number' ? parseFloat(editVal) || 0 : editVal) } }}
     />
   )
 }
@@ -29,8 +29,8 @@ function ProdUnitsTable({ preset, showToast }) {
   const [adding, setAdding] = useState(false)
   const [newRow, setNewRow] = useState({ name: '', city: '', capacity: 0, description: '' })
 
-  const load = () => api.getProdUnits(preset).then(setRows).catch(() => showToast('Failed to load', 'error'))
-  useEffect(() => { if (preset) load() }, [preset])
+  const load = useCallback(() => api.getProdUnits(preset).then(setRows).catch(() => showToast('Failed to load', 'error')), [preset, showToast])
+  useEffect(() => { if (preset) load() }, [preset, load])
 
   const patch = async (id, field, val) => {
     await api.updateProdUnit(id, { [field]: val })
@@ -90,8 +90,8 @@ function GrindUnitsTable({ preset, showToast }) {
   const [adding, setAdding] = useState(false)
   const [newRow, setNewRow] = useState({ name: '', city: '', demand: 0, description: '' })
 
-  const load = () => api.getGrindUnits(preset).then(setRows).catch(() => showToast('Failed to load', 'error'))
-  useEffect(() => { if (preset) load() }, [preset])
+  const load = useCallback(() => api.getGrindUnits(preset).then(setRows).catch(() => showToast('Failed to load', 'error')), [preset, showToast])
+  useEffect(() => { if (preset) load() }, [preset, load])
 
   const patch = async (id, field, val) => { await api.updateGrindUnit(id, { [field]: val }); showToast('Updated', 'success'); load() }
   const del = async (id) => { await api.deleteGrindUnit(id); showToast('Deleted', 'info'); load() }
@@ -139,15 +139,12 @@ function RoutesTable({ preset, showToast }) {
   const [adding, setAdding] = useState(false)
   const [newRow, setNewRow] = useState({ name: '', pu_id: '', gu_id: '', cost_per_tonne: 0, fixed_trip_cost: 0, max_capacity: null, description: '' })
 
-  const load = () => {
+  const load = useCallback(() => {
     api.getRoutes(preset).then(setRows).catch(() => showToast('Failed to load', 'error'))
     api.getProdUnits(preset).then(setPus).catch(() => {})
     api.getGrindUnits(preset).then(setGus).catch(() => {})
-  }
-  useEffect(() => { if (preset) load() }, [preset])
-
-  const puName = (id) => pus.find(p => p.id === id)?.name || id
-  const guName = (id) => gus.find(g => g.id === id)?.name || id
+  }, [preset, showToast])
+  useEffect(() => { if (preset) load() }, [preset, load])
 
   const patch = async (id, field, val) => { await api.updateRoute(id, { [field]: val }); showToast('Updated', 'success'); load() }
   const del = async (id) => { await api.deleteRoute(id); showToast('Deleted', 'info'); load() }

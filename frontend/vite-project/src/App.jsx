@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { api } from './api'
-import ToastContainer, { useToast } from './components/Toast'
+import ToastContainer from './components/Toast'
+import { useToast } from './useToast'
 import Sidebar from './components/Sidebar'
 import VisualizationTab from './components/VisualizationTab'
 import ResultTab from './components/ResultTab'
@@ -125,7 +126,7 @@ export default function App() {
           history={history}
         />
         <main className="content">
-          {tab === 'viz' && <VisualizationTab history={history} isRunning={isRunning} currentResult={currentResult} />}
+          {tab === 'viz' && <VisualizationTab history={history} isRunning={isRunning} />}
           {tab === 'result' && <ResultTab currentResult={currentResult} gaParams={gaParams} onSave={handleSave} showToast={showToast} />}
           {tab === 'compare' && <ComparisonsTab currentResult={currentResult} showToast={showToast} />}
           {tab === 'how' && <HowItWorksTab />}

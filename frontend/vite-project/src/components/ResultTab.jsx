@@ -14,7 +14,7 @@ function mapsLink(name, city) {
 export default function ResultTab({ currentResult, gaParams, onSave, showToast }) {
   const [pastRuns, setPastRuns] = useState([])
   const [selectedId, setSelectedId] = useState('current')
-  const [viewResult, setViewResult] = useState(null)
+  const [fetchedResult, setFetchedResult] = useState(null)
   const [saved, setSaved] = useState(false)
   const [sortCol, setSortCol] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
@@ -25,12 +25,12 @@ export default function ResultTab({ currentResult, gaParams, onSave, showToast }
   }, [])
 
   useEffect(() => {
-    if (selectedId === 'current') {
-      setViewResult(currentResult)
-    } else {
-      api.getResult(selectedId).then(setViewResult).catch(() => showToast('Failed to load result', 'error'))
+    if (selectedId !== 'current') {
+      api.getResult(selectedId).then(setFetchedResult).catch(() => showToast('Failed to load result', 'error'))
     }
-  }, [selectedId, currentResult])
+  }, [selectedId, showToast])
+
+  const viewResult = selectedId === 'current' ? currentResult : fetchedResult
 
   const handleSave = async () => {
     try {

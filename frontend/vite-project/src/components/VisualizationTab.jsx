@@ -24,7 +24,7 @@ function CustomTooltip({ active, payload }) {
   )
 }
 
-export default function VisualizationTab({ history, isRunning, currentResult }) {
+export default function VisualizationTab({ history, isRunning }) {
   const [showBest, setShowBest] = useState(true)
   const [showAvg, setShowAvg] = useState(true)
   const [showWorst, setShowWorst] = useState(false)
