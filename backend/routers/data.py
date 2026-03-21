@@ -4,6 +4,24 @@ from db import supabase
 print("data.py accessed")
 router = APIRouter()
 
+@router.get("/presets/summary")
+def get_presets_summary():
+    presets = supabase.table("presets").select("*").execute().data
+    result = []
+    for p in presets:
+        name = p["name"]
+        prod_count = len(supabase.table("production_units").select("id").eq("preset", name).execute().data)
+        grind_count = len(supabase.table("grinding_units").select("id").eq("preset", name).execute().data)
+        route_count = len(supabase.table("routes").select("id").eq("preset", name).execute().data)
+        result.append({
+            "name": name,
+            "description": p.get("description", ""),
+            "prod_units": prod_count,
+            "grind_units": grind_count,
+            "routes": route_count,
+        })
+    return result
+
 @router.get("/presets")
 def get_presets():
     return supabase.table("presets").select("*").execute().data
