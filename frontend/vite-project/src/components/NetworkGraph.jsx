@@ -152,9 +152,8 @@ export default function NetworkGraph({ prodUnits, grindUnits, routes }) {
       if (running) {
         if (settled < 200) {
           frameRef.current = requestAnimationFrame(simulate)
-        } else {
-          frameRef.current = setTimeout(() => { frameRef.current = requestAnimationFrame(simulate) }, 200)
         }
+        // once settled > 200, simulation stops; drag will restart it
       }
     }
 
@@ -162,7 +161,6 @@ export default function NetworkGraph({ prodUnits, grindUnits, routes }) {
     return () => {
       running = false
       cancelAnimationFrame(frameRef.current)
-      clearTimeout(frameRef.current)
     }
   }, [prodUnits, grindUnits, routes])
 
@@ -212,10 +210,19 @@ export default function NetworkGraph({ prodUnits, grindUnits, routes }) {
     }
     const node = getNodeAt(pos.x, pos.y)
     if (node) {
-      const info = node.type === 'pu'
-        ? `<b>${node.label}</b><br/>${node.city}<br/>Capacity: ${node.capacity}<br/>${node.description || ''}<br/><a href="https://www.google.com/maps/search/${encodeURIComponent(node.label + ' ' + node.city)}" target="_blank">View on Maps</a>`
-        : `<b>${node.label}</b><br/>${node.city}<br/>Demand: ${node.demand}<br/>${node.description || ''}<br/><a href="https://www.google.com/maps/search/${encodeURIComponent(node.label + ' ' + node.city)}" target="_blank">View on Maps</a>`
-      setTooltip({ x: pos.x + 15, y: pos.y - 10, html: info })
+      const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(node.label + ' ' + node.city)}`
+      setTooltip({
+        x: pos.x + 15, y: pos.y - 10,
+        data: {
+          type: node.type,
+          label: node.label,
+          city: node.city,
+          value: node.type === 'pu' ? node.capacity : node.demand,
+          valueLabel: node.type === 'pu' ? 'Capacity' : 'Demand',
+          description: node.description || '',
+          mapsUrl,
+        }
+      })
       return
     }
     const edge = getEdgeAt(pos.x, pos.y)
@@ -223,7 +230,14 @@ export default function NetworkGraph({ prodUnits, grindUnits, routes }) {
       const r = edge.route
       setTooltip({
         x: pos.x + 15, y: pos.y - 10,
-        html: `<b>${r.name}</b><br/>Cost/tonne: ₹${r.cost_per_tonne}<br/>Fixed trip: ₹${r.fixed_trip_cost}<br/>Max cap: ${r.max_capacity || '∞'}<br/>${r.description || ''}`
+        data: {
+          type: 'edge',
+          label: r.name,
+          cost_per_tonne: r.cost_per_tonne,
+          fixed_trip_cost: r.fixed_trip_cost,
+          max_capacity: r.max_capacity,
+          description: r.description || '',
+        }
       })
       return
     }
@@ -237,6 +251,31 @@ export default function NetworkGraph({ prodUnits, grindUnits, routes }) {
     }
   }
 
+  const renderTooltip = () => {
+    if (!tooltip) return null
+    const { data } = tooltip
+    if (data.type === 'edge') {
+      return (
+        <div className="graph-tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
+          <strong>{data.label}</strong><br />
+          Cost/tonne: ₹{data.cost_per_tonne}<br />
+          Fixed trip: ₹{data.fixed_trip_cost}<br />
+          Max cap: {data.max_capacity || '∞'}<br />
+          {data.description}
+        </div>
+      )
+    }
+    return (
+      <div className="graph-tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
+        <strong>{data.label}</strong><br />
+        {data.city}<br />
+        {data.valueLabel}: {data.value}<br />
+        {data.description}<br />
+        <a href={data.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>View on Maps</a>
+      </div>
+    )
+  }
+
   return (
     <div className="graph-container">
       <canvas
@@ -246,9 +285,7 @@ export default function NetworkGraph({ prodUnits, grindUnits, routes }) {
         onMouseUp={handleMouseUp}
         onMouseLeave={() => { handleMouseUp(); setTooltip(null) }}
       />
-      {tooltip && (
-        <div className="graph-tooltip" style={{ left: tooltip.x, top: tooltip.y, pointerEvents: 'auto' }} dangerouslySetInnerHTML={{ __html: tooltip.html }} />
-      )}
+      {renderTooltip()}
     </div>
   )
 }

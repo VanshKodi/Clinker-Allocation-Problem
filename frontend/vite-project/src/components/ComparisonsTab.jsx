@@ -58,7 +58,7 @@ export default function ComparisonsTab({ currentResult, showToast }) {
   METRICS.forEach(m => {
     const vals = selected.map(r => r[m.key]).filter(v => typeof v === 'number')
     if (vals.length) {
-      bestValues[m.key] = m.key === 'convergence_generation' ? Math.min(...vals) : Math.min(...vals)
+      bestValues[m.key] = Math.min(...vals)
     }
   })
 

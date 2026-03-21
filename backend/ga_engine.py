@@ -190,9 +190,8 @@ class GeneticAlgorithm:
 
     def _roulette(self, pop, fits):
         fits_arr = np.array(fits)
-        # Invert fitness (lower is better) so higher inverted value = more likely
-        max_fit = fits_arr.max()
-        inverted = max_fit - fits_arr + 1e-8
+        # Inverse weighting: lower fitness = higher probability
+        inverted = 1.0 / (fits_arr + 1e-8)
         probs = inverted / inverted.sum()
         idx = np.random.choice(len(pop), p=probs)
         return pop[idx].copy()
