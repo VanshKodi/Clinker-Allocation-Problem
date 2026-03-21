@@ -292,7 +292,7 @@ class GeneticAlgorithm:
 
     def _swap_mut(self, chrom):
         chrom = chrom.copy()
-        if self.n_routes < 2:
+        if self.n_routes < 2 or np.random.rand() >= self.mut_rate:
             return chrom
         i, j = np.random.choice(self.n_routes, 2, replace=False)
         chrom[i], chrom[j] = chrom[j], chrom[i]
@@ -326,7 +326,7 @@ class GeneticAlgorithm:
 
     # ── Result builder ──────────────────────────────────────
 
-    def build_result(self, best_chrom, best_fit, history, elapsed_seconds):
+    def build_result(self, best_chrom, best_fit, history, elapsed_seconds, convergence_generation):
         pu_lookup = {pu["id"]: pu for pu in self.prod_units}
         gu_lookup = {gu["id"]: gu for gu in self.grind_units}
 
@@ -354,15 +354,6 @@ class GeneticAlgorithm:
                 })
 
         total_cost = sum(a["total_cost"] for a in allocations)
-
-        convergence_generation = 1
-        if history:
-            best_seen = history[0]["best_fitness"]
-            convergence_generation = history[0]["generation"]
-            for entry in history[1:]:
-                if entry["best_fitness"] < best_seen:
-                    best_seen = entry["best_fitness"]
-                    convergence_generation = entry["generation"]
 
         return {
             "done":                    True,
@@ -440,5 +431,5 @@ class GeneticAlgorithm:
             await asyncio.sleep(0)
 
         elapsed = time.time() - t_start
-        result = self.build_result(best_chrom, best_fit, history, elapsed)
+        result = self.build_result(best_chrom, best_fit, history, elapsed, convergence_generation)
         yield {"type": "result", **result}
